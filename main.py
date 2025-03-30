@@ -21,6 +21,7 @@ class LoginRequest(BaseModel):
 # Inicializar FastAPI
 app = FastAPI()
 
+
 # Función para obtener la conexión a la base de datos
 def get_db_connection():
     connection = mysql.connector.connect(**db_config)
@@ -52,9 +53,9 @@ def read_root():
 @app.get("/test")
 def read_test():
     try:
-        connection = mysql.connector.connect(**db_config)
+        connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
-
+        
         # Ejecutar una consulta de prueba
         cursor.execute("SELECT 1")
         result = cursor.fetchone()
