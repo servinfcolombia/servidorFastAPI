@@ -1,15 +1,16 @@
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 import mysql.connector
+import os
 from fastapi.middleware.cors import CORSMiddleware
 
 # Configuración de la base de datos
 db_config = {
-    'user': '2462m9QwrhhNgcv.root',
-    'password': 'l2nwHbaiuEDMk3in',
-    'host': 'gateway01.us-east-1.prod.aws.tidbcloud.com',
-    'port': 4000,
-    'database': 'test'
+     'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'),
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', 4000)),
+    'database': os.getenv('DB_NAME')
 }
 
 # Modelo de datos para el login
