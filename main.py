@@ -60,17 +60,28 @@ def read_test():
         cursor.execute("SELECT 1")
         result = cursor.fetchone()
 
-        print("Conexión exitosa a la base de datos. Resultado de la consulta:", result)
+        return {
+            "status": "success",
+            "message": "Conexión exitosa a la base de datos",
+            "database_result": result,
+            "details": f"Conectado a {db_config['host']} (DB: {db_config['database']})"
+        }
 
     except mysql.connector.Error as err:
-        print("Error al conectarse a la base de datos:", err)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "error",
+                "message": "Error al conectarse a la base de datos",
+                "error_details": str(err)
+            }
+        )
 
     finally:
-        if connection.is_connected():
+        if 'connection' in locals() and connection.is_connected():
             cursor.close()
             connection.close()
-            print("Conexión cerrada.")
-
+            
 # Ejecutar la aplicación
 if __name__ == "__main__":
     import uvicorn
