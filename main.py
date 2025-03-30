@@ -49,6 +49,10 @@ def login(login_request: LoginRequest):
 def read_root():
     return {"message": "Welcome to the FastAPI TiDB Gateway"}
 
+@app.get("/test")
+def read_test():
+    return {"message": "This is a test endpoint"}
+
 # Ejecutar la aplicación
 if __name__ == "__main__":
     import uvicorn
