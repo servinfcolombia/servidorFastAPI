@@ -1,0 +1,5 @@
+HOST: gateway01.us-east-1.prod.aws.tidbcloud.com
+PORT: 4000
+USERNAME: 2462m9QwrhhNgcv.root
+PASSWORD: xxxderty
+DATABASE: test
