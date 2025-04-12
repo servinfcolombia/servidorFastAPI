@@ -21,12 +21,6 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
 
-# Modelo de datos para actualización
-class UpdateRequest(BaseModel):
-    current_email: str
-    new_email: str
-    new_password: str
-
 # Inicializar FastAPI
 app = FastAPI()
 
@@ -147,45 +141,6 @@ def get_all_users():
         return {"users": users}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    finally:
-        cursor.close()
-        connection.close()
-
-# Ruta para actualizar usuarios
-@app.put("/update_user")
-def update_user(update_request: UpdateRequest):
-    connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True)
-
-    try:
-        # Verificar si el usuario actual existe
-        check_query = "SELECT * FROM loguin WHERE email = %s"
-        cursor.execute(check_query, (update_request.current_email,))
-        existing_user = cursor.fetchone()
-
-        if not existing_user:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-        # Verificar si el nuevo email ya está en uso
-        if update_request.current_email != update_request.new_email:
-            cursor.execute(check_query, (update_request.new_email,))
-            if cursor.fetchone():
-                raise HTTPException(status_code=400, detail="El nuevo email ya está en uso")
-
-        # Actualizar usuario
-        update_query = "UPDATE loguin SET email = %s, password = %s WHERE email = %s"
-        cursor.execute(update_query, (
-            update_request.new_email,
-            update_request.new_password,
-            update_request.current_email
-        ))
-        connection.commit()
-
-        return {"message": "Usuario actualizado correctamente"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al actualizar: {str(e)}")
     finally:
         cursor.close()
         connection.close()
