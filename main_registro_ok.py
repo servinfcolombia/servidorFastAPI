@@ -3,7 +3,6 @@ from pydantic import BaseModel
 import mysql.connector
 from fastapi.middleware.cors import CORSMiddleware
 
-
 # Configuración de la base de datos
 db_config = {
     'user': '2462m9QwrhhNgcv.root',
@@ -18,13 +17,20 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-# Modelo de datos para el Registro
 class RegisterRequest(BaseModel):
-    login_data: dict
-    user_data: dict
+    email: str
+    password: str
 
 # Inicializar FastAPI
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite solicitudes desde cualquier origen; para producción, especifica los orígenes permitidos.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Función para obtener la conexión a la base de datos
 def get_db_connection():
@@ -34,6 +40,9 @@ def get_db_connection():
 # Ruta para el login
 @app.post("/login")
 def login(login_request: LoginRequest):
+    print(f"Received email: {login_request.email}")
+    print(f"Received password: {login_request.password}")
+
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
 
@@ -49,45 +58,40 @@ def login(login_request: LoginRequest):
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+# Ruta para el registro
 @app.post("/register")
 def register(register_request: RegisterRequest):
-    try:
-        # Insertar en tabla loguin
-        login_query = "INSERT INTO loguin (email, password) VALUES (%s, %s)"
-        login_values = (
-            register_request.login_data['email'],
-            register_request.login_data['password']
-        )
-        
-        # Insertar en tabla usuarios
-        user_query = """INSERT INTO usuarios 
-                        (nombres, apellidos, tipo_documento, email, telefono, sexo, fecha_nacimiento) 
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-        user_values = (
-            register_request.user_data['nombres'],
-            register_request.user_data['apellidos'],
-            register_request.user_data['tipo_documento'],
-            register_request.user_data['email'],
-            register_request.user_data['telefono'],
-            register_request.user_data['sexo'],
-            register_request.user_data['fecha_nacimiento']
-        )
-        
-        connection = get_db_connection()
-        cursor = connection.cursor()
-        
-        # Ejecutar ambas inserciones en una transacción
-        cursor.execute(login_query, login_values)
-        cursor.execute(user_query, user_values)
-        
-        connection.commit()
+    print(f"Register attempt with email: {register_request.email}")
+    
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    
+    # Verificar si el email ya existe
+    check_query = "SELECT * FROM loguin WHERE email = %s"
+    cursor.execute(check_query, (register_request.email,))
+    existing_user = cursor.fetchone()
+
+    if existing_user:
         cursor.close()
         connection.close()
-        
-        return {"message": "Usuario registrado exitosamente"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Insertar nuevo usuario
+    insert_query = "INSERT INTO loguin (email, password) VALUES (%s, %s)"
+    cursor.execute(insert_query, (register_request.email, register_request.password))
+    connection.commit()
+
+    # Obtener el usuario recién creado
+    cursor.execute(check_query, (register_request.email,))
+    new_user = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    if new_user:
+        return {"message": "Registration successful", "user": new_user}
+    else:
+        raise HTTPException(status_code=500, detail="Registration failed")
 # Ruta de prueba
 @app.get("/")
 def read_root():
